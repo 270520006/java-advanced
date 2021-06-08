@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/01.反射、泛型、集合容器/01.反射、泛型、集合容器.iml" filepath="$PROJECT_DIR$/01.反射、泛型、集合容器/01.反射、泛型、集合容器.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/java-advanced.iml" filepath="$PROJECT_DIR$/.idea/java-advanced.iml" />
     </modules>
   </component>
