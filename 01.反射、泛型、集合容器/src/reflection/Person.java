@@ -1,9 +1,9 @@
 package reflection;
 
 public class Person {
-    private String name;
+    public String name="zsp";
     private int  gender;
-    private int age;
+    protected int age;
 
     public Person() {
     }
@@ -12,6 +12,18 @@ public class Person {
         this.name = name;
         this.gender = gender;
         this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getGender() {
+        return gender;
+    }
+
+    public int getAge() {
+        return age;
     }
 
     @Override
