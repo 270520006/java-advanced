@@ -6,5 +6,6 @@ public class TestDemo {
     public static void main(String[] args) {
         ArrayList<Object> list = new ArrayList<>();
         list.add("!");
+        list.get(1);
     }
 }
