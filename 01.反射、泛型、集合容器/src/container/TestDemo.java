@@ -7,5 +7,6 @@ public class TestDemo {
         ArrayList<Object> list = new ArrayList<>();
         list.add("!");
         list.get(1);
+        list.remove(1);
     }
 }
