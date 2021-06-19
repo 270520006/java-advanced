@@ -2,7 +2,7 @@ package container;
 
 import java.util.ArrayList;
 
-public class TestDemo {
+public class TestArrayList {
     public static void main(String[] args) {
         ArrayList<Object> list = new ArrayList<>();
         list.add("!");
