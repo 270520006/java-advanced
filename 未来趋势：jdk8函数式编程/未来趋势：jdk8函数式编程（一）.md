@@ -61,3 +61,106 @@
 * 结合率(一些组合)
 
 目前java的jdk8只实现了部分FP功能，但后续更新的高阶版本已经逐步纳入了FP越来越多的功能，一定要学好这部分。
+
+
+
+### JAVA8之前早已存在的适用函数式编程的场景(Lambda表达式解决的痛点)
+
+* 创建线程 (匿名内部类，但匿名内部类会生成class文件，而lambda不会)
+* 策略模式，如comparator
+* UI编程
+* 异步回调
+
+### Lambda表达式
+
+* 正常的方法：
+
+```java
+public static void fn（T param1,R param2...）{
+    //......
+	//......
+}
+```
+
+* lambda表达式
+
+```java
+XXFunction fn=（T param1，R param2）->{
+    //......
+    //......
+}
+```
+
+### Lambda表达式语法糖
+
+​	原式:
+
+```java
+static Function<Integer,String> intString_1 =
+            (Integer i)->{return String.valueOf(i);};
+```
+
+* 参数类型可推导
+
+```java
+static Function<Integer,String> intString_2 =
+            (Integer i)-> String.valueOf(i);
+```
+
+* 单行可省略大括号
+
+```java
+    static Function<Integer,String> intString_3 =
+            (i)-> String.valueOf(i);
+```
+
+* 单参数可省略小括号
+
+```
+    static Function<Integer,String> intString_4 =
+            i-> String.valueOf(i);
+```
+
+### 函数式接口SAM(Single Abstract Method)
+
+* 只有一个方法
+
+```java
+@FunctionInterface   //非必要，如果加上，编译器会进行校验   @FunctionInterface是为了告诉别人，他是函数式接口
+public Interface Runnable{   //必须是interface
+	public abstract void run(); //单个非默认/静态实现方法
+}
+
+相当于：Runnable r =() ->System.out.println("hello"); 
+```
+
+### 必须掌握的内置常用函数式接口
+
+![image-20210621201031965](未来趋势：jdk8函数式编程（一）/image-20210621201031965.png)
+
+* Function<T,R>:传入的是T，传出的可以是R，说明传入和传出可以不同。
+* Supplier <T>: 生产者，没有输入但是有产出。
+* Consumer<T>:消费者，只有传入，没有传出。
+* Runnable:无产出，也不消费。
+* Predicate<T>：进行判断的方法，传入任意类型，产出布尔值。
+* UnaryOperator<T,T>：传入和产出一样类型。
+
+### 思考
+
+```java
+a->b->c->d代表什么？
+```
+
+```java
+a->(b->c->d);  b->(c->d);c->d; 或 fn=a->b->c->d;相当于fn1=f(a);fn2=fn1(b);d=fn2(c);
+特别注意：
+    b->(c->d)是一个consumer，
+    a->b->(c->d);是一个function，它的返回是b->(c->d)
+	例：Function<T,Consumer> fn =a -> b->{}    
+```
+
+### 方法引用
+
+* 静态方法→需要告之属于哪个类   									classX : :methodName
+* 构造方法-→需要告之属于哪个类                                      classX :: new
+* 指定实例方法→需要告之属于哪个实例                            instance :: methodName
