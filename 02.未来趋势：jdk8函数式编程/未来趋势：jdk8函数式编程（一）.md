@@ -159,8 +159,128 @@ a->(b->c->d);  b->(c->d);c->d; 或 fn=a->b->c->d;相当于fn1=f(a);fn2=fn1(b);d=
 	例：Function<T,Consumer> fn =a -> b->{}    
 ```
 
+#### 如果传入的形参有两个怎么办？三个呢？
+
+两个可以用：BiFunction ，三个用自定义的FP
+
+* 先写几个函数式接口
+
+```java
+ @FunctionalInterface
+public interface ZSP<A,B,C,D> {
+    D apply(A a,B b,C c);}
+```
+
+```java
+public class TestStaticMethod {
+    public String name;
+    public static Integer getNum(){return 233;}
+}
+```
+
+* 运用定义的函数接口,最后使用ZSP这个自定义接口
+  * sum是BiFunction的FP
+  * integerSupplier是个Function类的FP
+  * TestStaticMethod::getNum是一个方法引用
+  * getSecondS是一个生产者类型的FP，生产出来的是integerSupplier
+
+```java
+private static BiFunction<Integer,Integer,Integer> sum=(a,b)->a+b;
+private static Function<String,Integer> integerSupplier= (a)->Integer.valueOf(a);
+private static Supplier<Function<String,Integer>> getSecondS=()->integerSupplier;
+private static
+    ZSP<BiFunction<Integer,Integer,Integer>,Supplier<Function<String,Integer>>,Supplier<Integer>,String>
+            zsp= (a,b,c)->String.valueOf(a.apply(123,321)+b.get().apply("213")+c.get());
+zsp.apply(sum,getSecondS,TestStaticMethod::getNum)
+```
+
+
+
 ### 方法引用
 
 * 静态方法→需要告之属于哪个类   									classX : :methodName
 * 构造方法-→需要告之属于哪个类                                      classX :: new
 * 指定实例方法→需要告之属于哪个实例                            instance :: methodName
+
+  方法引用举例：有参则传入相应参数，无参则使用生产者FP
+
+```java
+//        初始化静态方法
+        Function<Integer,String> function= TestStaticMethod::testMethod;
+//        有参构造初始化了TestStaticMethod
+        Function<String,TestStaticMethod> function1 =TestStaticMethod::new;
+//无参构造初始化了TestStaticMethod
+        Supplier<TestStaticMethod> supplier =TestStaticMethod::new;
+```
+
+​	假设doTwice是一个第三方方法，要你传入一个方法，可以传入的形式:
+
+* 正常方法传入。	
+* 传入lambda表达式。
+* 传入方法引用。
+* 传入缺少参数的方法引用：只能缺一个，而且都是第一个！
+
+```java
+		1、doTwice(Consumer<T> fn)   //正常的方法引用
+        2、doTwice(a->xxx)  //传入lambda表达式
+        3、doTwice(System.out::println) //传入方法引用
+        4、doTwice(T::f);  //原式子是需要传入参数的，但我们可以使用方法引用，可以不传入参数。
+		Class T{
+            fn(){}
+        }
+```
+
+#### 指定类型任意实例方法引用：
+
+* Function可以比方法少一位参数，类里的方法如下：
+
+```java
+    private Integer getA(Integer a) {return a;}
+```
+
+* 使用并将其输出
+
+```java
+        BiFunction<LambdBase,Integer,Integer> function2= LambdBase::getA;
+        System.out.println(function2.apply(new LambdBase(), 1));
+```
+
+
+
+### 函数式接口转换
+​	由于JAVA是强类型，在某些场合下，我们并不要求函数签名完全一致时，可以进行转换。
+
+* 忽略输入: Function <- Supplier
+
+* 忽略返回:Consumer <-Function
+
+* 忽略输入和返回:Runnable <- Supplier
+
+#### 写一个工具类，用来转换函数式接口：
+
+```java
+public class FPUtils {
+    public static <T,R>Function<T,R> S2F(Supplier<R> supplier){
+        return a-> supplier.get();
+    }
+    public static <T,R>Consumer<T> C2F(Function<T,R> function){
+        return a->function.apply(a);
+    }
+    public static <R> Runnable S2R(Supplier<R> supplier){
+        return ()->supplier.get();
+    }
+
+}
+```
+
+#### 特殊的void-compatibility规则:
+
+​	如果lambda是一个语句表达式，那么即使该lambda有返回值也可以赋值给返回值签名为void的函数：
+
+​	只要代码只有一行，有返回值也没事，会被忽略掉：
+
+```java
+    private static Consumer<Integer> integerConsumer= a->a++;
+    private static Runnable runnable= ()->Integer.getInteger("123");
+```
+
