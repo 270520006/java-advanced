@@ -6,7 +6,6 @@ public class FPUtils {
     public static <T,R>Function<T,R> S2F(Supplier<R> supplier){
         return a-> supplier.get();
     }
-
     public static <T,R>Consumer<T> C2F(Function<T,R> function){
         return a->function.apply(a);
     }
