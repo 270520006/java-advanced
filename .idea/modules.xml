@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/01.反射、泛型、集合容器/01.反射、泛型、集合容器.iml" filepath="$PROJECT_DIR$/01.反射、泛型、集合容器/01.反射、泛型、集合容器.iml" />
       <module fileurl="file://$PROJECT_DIR$/02.未来趋势：jdk8函数式编程/02.未来趋势：jdk8函数式编程.iml" filepath="$PROJECT_DIR$/02.未来趋势：jdk8函数式编程/02.未来趋势：jdk8函数式编程.iml" />
+      <module fileurl="file://$PROJECT_DIR$/09、JVM/09、JVM.iml" filepath="$PROJECT_DIR$/09、JVM/09、JVM.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/java-advanced.iml" filepath="$PROJECT_DIR$/.idea/java-advanced.iml" />
     </modules>
   </component>
