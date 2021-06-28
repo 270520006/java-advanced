@@ -1,15 +1,3 @@
----
-title: 玩转JVM之垃圾收集器
-tags: JVM
-hide: true
-categories: JVM
-top_img: /images/material/486.jpg
-cover: /images/material/486.jpg
-date: 2021-06-27 23:46:12
----
-
-
-
 ## 《玩转JVM之垃圾收集器》
 
 ### 垃圾回收器分类方式
