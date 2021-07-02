@@ -1,8 +1,8 @@
 public class TreeNode {
     private TreeNode leftTreeNode;
     private TreeNode rightTreeNode;
-    private String value;
-    public TreeNode(String value) {
+    private int value;
+    public TreeNode(int  value) {
         this.value = value;
     }
 
@@ -22,7 +22,7 @@ public class TreeNode {
         return rightTreeNode;
     }
 
-    public String getValue() {
+    public int  getValue() {
         return value;
     }
 }
