@@ -24,11 +24,19 @@ public class TreeDemo {
         for (Integer one : list) {
             CreateTree(treeRoot,one);
         }
-        LRD(treeRoot.getTreeRoot());
+        System.out.println("中序遍历的结果是：");
+        LDR(treeRoot.getTreeRoot());
         System.out.println("author:zsp");
 
     }
+    public static void LDR(TreeNode rootTreeNode){
+        if (rootTreeNode!=null){
+            LDR(rootTreeNode.getLeftTreeNode());
+            System.out.print(rootTreeNode.getValue()+"--");
+            LDR(rootTreeNode.getRightTreeNode());
 
+        }
+    }
     public static void LRD(TreeNode rootTreeNode){
         if (rootTreeNode!=null){
             LRD(rootTreeNode.getLeftTreeNode());
@@ -64,11 +72,6 @@ public class TreeDemo {
                     }
                 }
             }
-
-
         }
-
     }
-
-
 }
