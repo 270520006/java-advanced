@@ -28,7 +28,7 @@ public class ForkJoinDemo extends RecursiveTask<Long> {
         {
             Long mid =(end+start)/2;
             ForkJoinDemo task1 = new ForkJoinDemo(start, mid);
-            ForkJoinDemo task2 = new ForkJoinDemo(mid, end);
+            ForkJoinDemo task2 = new ForkJoinDemo(mid+1, end);
             invokeAll(task1,task2);
             return task1.join()+task2.join();
         }
