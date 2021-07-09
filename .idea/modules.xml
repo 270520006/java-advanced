@@ -7,6 +7,7 @@
       <module fileurl="file://$PROJECT_DIR$/09、JVM/09、JVM.iml" filepath="$PROJECT_DIR$/09、JVM/09、JVM.iml" />
       <module fileurl="file://$PROJECT_DIR$/11、JUC/11、JUC.iml" filepath="$PROJECT_DIR$/11、JUC/11、JUC.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/java-advanced.iml" filepath="$PROJECT_DIR$/.idea/java-advanced.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sql/sql.iml" filepath="$PROJECT_DIR$/sql/sql.iml" />
       <module fileurl="file://$PROJECT_DIR$/数据结构/数据结构.iml" filepath="$PROJECT_DIR$/数据结构/数据结构.iml" />
     </modules>
   </component>
