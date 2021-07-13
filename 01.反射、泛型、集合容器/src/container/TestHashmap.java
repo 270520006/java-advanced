@@ -14,5 +14,6 @@ public class TestHashmap {
         AtomicInteger atomicInteger = new AtomicInteger();
         atomicInteger.getAndIncrement();
         ReentrantLock reentrantLock = new ReentrantLock();
+
     }
 }
