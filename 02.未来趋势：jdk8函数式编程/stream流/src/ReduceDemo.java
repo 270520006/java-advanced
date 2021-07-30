@@ -17,8 +17,13 @@ public class ReduceDemo {
 //        求最大值
 //        int max = max(list);
 //          使用reduce将其转换为list
-        List<Integer> integers = toList(list.stream());
-        System.out.println(integers);
+//        List<Integer> integers = toList(list.stream());
+//        System.out.println(integers);
+//        使用join拼串
+        ArrayList<String> strs = new ArrayList<>();
+        strs.add("I ");strs.add("am ");strs.add("sad");
+        String asd = join(strs, "asd");
+        System.out.println(asd);
     }
 //          2、手写一个迭代模仿reduce
     public static <T,R> R reduce(BiFunction<R,T,R> accumulator, Collection<T> datas,R initValue){
@@ -38,10 +43,10 @@ public class ReduceDemo {
         return list.stream().reduce(Math::max).orElse(null);
     }
 //            5、拼串
-    public static String join(Collection<Integer>list){
-//        return list.stream().reduce(0,(max,curr)->max>curr?max:curr);
-//    return list.stream().reduce(0,(acc,curr)->acc+curr);
-        return null;
+    public static String join(Collection<String>list,String str){
+
+        return list.stream().reduce(str,(acc,curr)->{acc=acc+curr;return acc;});
+
     }
     public static <T> List<T> toList(Stream<T> stream){
 //        return list.stream().reduce(0,(max,curr)->max>curr?max:curr);
