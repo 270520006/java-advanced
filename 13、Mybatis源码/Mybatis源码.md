@@ -64,3 +64,19 @@ public <T> T getMapper(Class<T> type) {
   }
 ```
 
+进入注册器的getMapper：
+
+* type=userMapper.class
+* knowMappers事先已经在mybatis-config.xml配置里初始化完毕了
+* 将userMapper放入knowMappers.get()中，获取Mapper的代理工厂
+* 如果获取不到代理工厂则说明，userMapper.class没有找到，说明我们没有写或者没有被注册器发现，抛出异常
+* 找得到则使用newInstance，初始化实例，这里我们滑轮点击进入newInstance
+
+![image-20210805082433028](Mybatis源码/image-20210805082433028.png)
+
+进入newInstance后发现有两个newInstance：
+
+* 先使用public的，生成一个mapperProxy代理接口，然后传递给类里的newInstance
+* protected的newInstance里执行的方法类似于JDK动态代理，进入newProxyInstance继续深入源码
+
+![image-20210805083406028](Mybatis源码/image-20210805083406028.png)
