@@ -113,11 +113,39 @@ public <T> T getMapper(Class<T> type) {
 我们使用的所用方法初始都会进入invoke方法，invoke方法执行步骤：
 
 * 判断是否Object对象，是就调用Object方法，就比如是toString这种。
-* 如果是default方法，则调用default方法，方法名带default的那种。
-* 由于我们的方法都不满足，所以都不返回，执行下一步：
-  * 获取MapperMethod实例，使用MapperMethod实例执行方法。
+* 否则执行cachedInvoker方法。
 
-接下去，我们进入CachedMapperMethod查看是如何获取mapperMethod实例的。
+接下去，我们进入cachedInvoker查看是如何获取mapperMethod实例的。
 
-![image-20210807163341217](Mybatis源码/image-20210807163341217.png)
+![image-20210809082659622](Mybatis源码/image-20210809082659622.png)
 
+进入cachedInvoker方法后：
+
+* 首先使用MapUtil的computeIfAbsent方法判断传入的方法是否为空
+  * 如果为空则返回
+
+```java
+private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
+  try {
+    return MapUtil.computeIfAbsent(methodCache, method, m -> {
+      if (m.isDefault()) {
+        try {
+          if (privateLookupInMethod == null) {
+            return new DefaultMethodInvoker(getMethodHandleJava8(method));
+          } else {
+            return new DefaultMethodInvoker(getMethodHandleJava9(method));
+          }
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException
+            | NoSuchMethodException e) {
+          throw new RuntimeException(e);
+        }
+      } else {
+        return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
+      }
+    });
+  } catch (RuntimeException re) {
+    Throwable cause = re.getCause();
+    throw cause == null ? re : cause;
+  }
+}
+```
