@@ -119,18 +119,35 @@ public <T> T getMapper(Class<T> type) {
 
 ![image-20210809082659622](Mybatis源码/image-20210809082659622.png)
 
-进入cachedInvoker方法后：
+​	根据被调用接口方法的Method对象，从缓存中获取MapperMethodInvoker对象，如果没有则创建一个并放入缓存。然后会判断用户当前调用的是否是接口的default方法，如果不是就会创建一个PlainMethodInvoker对象并返回。我们进入cachedInvoker方法查看：
 
-* 首先使用MapUtil的computeIfAbsent方法判断传入的方法是否为空
-  * 如果为空则返回
+* 首先使用MapUtil的computeIfAbsent方法判断传入的方法是否为空，这里介绍下这个方法：
+
+  * 这个方法会把传入的method拿去查找，得到对应的值
+
+    * 如果值为空，则将经过Function处理过的method方法放入为值
+    * 如果不为空，则返回method对应的key值
+
+    这个方法非常巧妙，使用了FP的思想，第二层使用了方法引用，最后一层调用顶层方法进行处理回调，大家有空可以看看。
+
+  * 介绍lambda表达式所写内容
+
+    * 首先判断传入方法是否为默认方法，判断方法如下：
+      * (判断方法修饰符是否为空)&(方法修饰符是否为abstract|public|static其中之一)&判断是否为接口，都为真则返回true。
+      * 判断是否有*privateLookupInMethod* 方法，该方法是java9才有的方法，所以是为了判断你java版本的，根据你java的版本调用对应的DefaultMethodInvoker方法。
+    * 如果不是默认方法，则使用一个PlainMethodInvoker来装载MapperMethod。
+
+总结一下：cachedInvoker就是用来判断我们要用的方法在不在缓存Map里存着，有的话存返回对应方法，没有就根据方法的类型进行返回。
+
+下面我们返回上一层，就是invoke这层，会发现我们返回了方法后，立马调用了cachedInvoker的invoke方法，滑轮点击cachedInvoker的invoke方法，我们继续深入：
 
 ```java
 private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
   try {
     return MapUtil.computeIfAbsent(methodCache, method, m -> {
-      if (m.isDefault()) {
+      if (m.isDefault()) { //判断是否为默认方法
         try {
-          if (privateLookupInMethod == null) {
+          if (privateLookupInMethod == null) { //判断当前的jdk版本
             return new DefaultMethodInvoker(getMethodHandleJava8(method));
           } else {
             return new DefaultMethodInvoker(getMethodHandleJava9(method));
@@ -139,7 +156,7 @@ private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
             | NoSuchMethodException e) {
           throw new RuntimeException(e);
         }
-      } else {
+      } else { //如果不是默认方法则调用PlainMethodInvoker装载mapperMethod
         return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
       }
     });
@@ -149,3 +166,206 @@ private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
   }
 }
 ```
+
+ 进入cachedInvoker的invoke方法：会发现他是一个接口，我们去看一下他的实现类：
+
+* DefaultMethodInvoker，上面cachedInvoker部分看到的默认方法的处理方式
+* PlainMethodInvoker，上面cachedInvoker部分看到的非默认方法的处理方式
+
+这里我们滑轮进入PlainMethodInvoker类，查看invoke方法，因为我们写入的Mapper对应的sql都不是默认方法。
+
+```java
+interface MapperMethodInvoker {
+  Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable;
+}
+```
+
+进入PlainMethodInvoker类后，直奔invoke方法，介绍下传入参数：
+
+* 
+
+```java
+@Override
+public Object invoke(Object proxy, Method method, Object[] args, SqlSession sqlSession) throws Throwable {
+  return mapperMethod.execute(sqlSession, args);
+}
+```
+
+​	进入mapperMethod查看execute方法，可以看到还很简单，就是switch判断类型，然后怼对应的方法，这里我们选一个INSERT来重点说，然后你就会问了，为什么不选SELECT来说，看着好像很复杂，其实一点都不复杂，而是因为SELECT分成了很多情况，比如集合、map、单个对象，我不好细说，所以讲个INSERT大家触类旁通即可：（SELECT对应部分注释，我也给出来了。）
+
+* 使用command的getType方法获取操作的方法，并且用switch执行对应方法，这里假设进入INSERT方法：
+  * 使用MethodSignature对传入的参数agrs进行参数转换。
+  * 转换成对象元素后放入sqlSession进行查询，查询完毕后使用rowCountResult封装，然后返回结果。
+
+这里重点来讲下SqlCommand和MethodSignature两个类怎么去实现我写在注释里的功能的。
+
+```java
+  private final SqlCommand command; //负责获取Dao中的名字、判断使用的数据库、判断要进行的数据操作方式：例如insert等
+  private final MethodSignature method;//判断返回值是什么类型：例如，集合、Map、Void、或者Class实例等。
+
+  public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
+    this.command = new SqlCommand(config, mapperInterface, method);
+    this.method = new MethodSignature(config, mapperInterface, method);
+  }
+public Object execute(SqlSession sqlSession, Object[] args) {
+  Object result;
+  switch (command.getType()) { //执行方法判断
+    case INSERT: {
+      Object param = method.convertArgsToSqlCommandParam(args);//参数转换
+      result = rowCountResult(sqlSession.insert(command.getName(), param));//SQL执行
+      break;
+    }
+    case UPDATE: {
+      Object param = method.convertArgsToSqlCommandParam(args);
+      result = rowCountResult(sqlSession.update(command.getName(), param));
+      break;
+    }
+    case DELETE: {
+      Object param = method.convertArgsToSqlCommandParam(args);
+      result = rowCountResult(sqlSession.delete(command.getName(), param));
+      break;
+    }
+    case SELECT:
+        //1.返回void
+      if (method.returnsVoid() && method.hasResultHandler()) {
+        executeWithResultHandler(sqlSession, args);
+        result = null;
+        //2.返回集合
+      } else if (method.returnsMany()) {
+        result = executeForMany(sqlSession, args);
+        //3.返回map
+      } else if (method.returnsMap()) {
+        result = executeForMap(sqlSession, args);
+        //4.返回游标
+      } else if (method.returnsCursor()) {
+		//5.返回单个对象
+        result = executeForCursor(sqlSession, args);
+      } else {
+        Object param = method.convertArgsToSqlCommandParam(args);
+        result = sqlSession.selectOne(command.getName(), param);
+        if (method.returnsOptional()
+            && (result == null || !method.getReturnType().equals(result.getClass()))) {
+          result = Optional.ofNullable(result);
+        }
+      }
+      break;
+    case FLUSH:
+      result = sqlSession.flushStatements();
+      break;
+    default:
+      throw new BindingException("Unknown execution method for: " + command.getName());
+  }
+  if (result == null && method.getReturnType().isPrimitive() && !method.returnsVoid()) {
+    throw new BindingException("Mapper method '" + command.getName()
+        + " attempted to return null from a method with a primitive return type (" + method.getReturnType() + ").");
+  }
+  return result;
+}
+```
+
+进入SqlCommand类中：
+
+* 参数介绍：
+  * name：Dao层方法名
+  * type：操作类型，例如UNKNOWN, INSERT, UPDATE, DELETE, SELECT, FLUSH
+* SqlCommand具体步骤：
+  * 获取要进行操作的操作名
+  * 获得方法声明的接口类型
+  * 根据xml中的每个方法构建的MappedStatement 
+  * 如果没有获取到，则查看是否为刷新，是的话名字置空，类型转为刷新。不是刷新还为空，就报错。
+  * 如果不为空，则获取对应的对象id和对应操作类型。
+  * 如果是UNKNOWN，则抛出异常。
+
+```java
+ public static class SqlCommand {
+     //Dao层方法名
+    private final String name; 	
+     // 操作的类型：SqlCommandType内只有UNKNOWN, INSERT, UPDATE, DELETE, SELECT, FLUSH，六个变量。
+    private final SqlCommandType type;
+     
+    public SqlCommand(Configuration configuration, Class<?> mapperInterface, Method method) {
+      //获取要进行操作的操作名：UNKNOWN, INSERT, UPDATE, DELETE, SELECT, FLUSH
+      final String methodName = method.getName();
+      //获得方法声明的接口类型，表示类或接口的Class对象。
+      final Class<?> declaringClass = method.getDeclaringClass();
+      //根据这个获取mybatis初始化时为xml中的每个方法构建的MappedStatement  里面主要存储该sql的信息 
+      MappedStatement ms = resolveMappedStatement(mapperInterface, methodName, declaringClass,
+          configuration);
+        
+      if (ms == null) {
+        if (method.getAnnotation(Flush.class) != null) {
+          name = null;
+          type = SqlCommandType.FLUSH;
+        } else {
+          throw new BindingException("Invalid bound statement (not found): "
+              + mapperInterface.getName() + "." + methodName);
+        }
+      } else {
+        name = ms.getId();
+        type = ms.getSqlCommandType();
+        if (type == SqlCommandType.UNKNOWN) {
+          throw new BindingException("Unknown execution method for: " + name);
+        }
+      }
+    }
+    public SqlCommandType getType() {
+      return type;
+    }
+```
+
+​	总结：查找操作类型，判断传来的方法是什么操作类型。
+
+进入MethodSignature方法中查看：
+
+​	主要就是为了判断返回的数据类型，例如，集合、Map、Void、或者Class实例等。
+
+```java
+public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {
+  //该方法返回类型    
+  Type resolvedReturnType = TypeParameterResolver.resolveReturnType(method, mapperInterface);
+  if (resolvedReturnType instanceof Class<?>) {
+    this.returnType = (Class<?>) resolvedReturnType;
+  } else if (resolvedReturnType instanceof ParameterizedType) {
+    this.returnType = (Class<?>) ((ParameterizedType) resolvedReturnType).getRawType();
+  } else {
+    this.returnType = method.getReturnType();
+  }
+  //是否返回空
+  this.returnsVoid = void.class.equals(this.returnType);
+  //是否返回多个数据 
+  this.returnsMany = configuration.getObjectFactory().isCollection(this.returnType) || this.returnType.isArray();
+  //是否返回的是Cursor类型
+  this.returnsCursor = Cursor.class.equals(this.returnType);
+  //是否返回的是Optional类型
+  this.returnsOptional = Optional.class.equals(this.returnType);
+  //获取到mapKey 即@MapKey值
+  this.mapKey = getMapKey(method);
+  //是否返回map
+  this.returnsMap = this.mapKey != null;
+  //参数中是否有RowBounds  即mybatis的分页工具类
+  this.rowBoundsIndex = getUniqueParamIndex(method, RowBounds.class);
+  //是否有ResultHandler类
+  this.resultHandlerIndex = getUniqueParamIndex(method, ResultHandler.class);
+  //获取到参数值  即@Param的值，如果有则为里面的value值  如果没有 则为'0','1','2'之类的
+  this.paramNameResolver = new ParamNameResolver(configuration, method);
+}
+```
+
+再回到之前的INSERT方法：
+
+* 使用MethodSignature的方法将args数组转换成我们需要获取的数据类型。
+* 传入方法名和需要返回的对应元素类型。
+
+最后一步，执行sqlSession的insert方法，映射到对应的xml
+
+```java
+case INSERT: {
+  //使用MethodSignature的方法将args数组转换成我们需要获取的数据类型。
+  Object param = method.convertArgsToSqlCommandParam(args);
+  //传入方法名和需要返回的对应元素类型。
+  result = rowCountResult(sqlSession.insert(command.getName(), param));
+  break;
+}
+```
+
+至此Mybatis框架运行时第二阶段获取MapperMethod对象结束。
