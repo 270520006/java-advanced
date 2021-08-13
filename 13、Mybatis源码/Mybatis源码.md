@@ -313,7 +313,15 @@ public Object execute(SqlSession sqlSession, Object[] args) {
     }
 ```
 
-​	总结：查找操作类型，判断传来的方法是什么操作类型。
+​	
+
+* 执行流程如下，这两个图是连起来的
+
+![image-20210813083157752](Mybatis源码/image-20210813083157752.png)
+
+![image-20210813083243166](Mybatis源码/image-20210813083243166.png)
+
+总结：查找操作类型，判断传来的方法是什么操作类型。
 
 进入MethodSignature方法中查看：
 
@@ -350,6 +358,10 @@ public MethodSignature(Configuration configuration, Class<?> mapperInterface, Me
   this.paramNameResolver = new ParamNameResolver(configuration, method);
 }
 ```
+
+​		执行流程图如下：
+
+![image-20210813082848513](Mybatis源码/image-20210813082848513.png)
 
 再回到之前的INSERT方法：
 
