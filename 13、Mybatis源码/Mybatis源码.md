@@ -167,7 +167,11 @@ private MapperMethodInvoker cachedInvoker(Method method) throws Throwable {
 }
 ```
 
- 进入cachedInvoker的invoke方法：会发现他是一个接口，我们去看一下他的实现类：
+怎么判断是不是default方法：
+
+![image-20210816005516032](Mybatis源码/image-20210816005516032.png) 
+
+进入cachedInvoker的invoke方法：会发现他是一个接口，我们去看一下他的实现类：
 
 * DefaultMethodInvoker，上面cachedInvoker部分看到的默认方法的处理方式
 * PlainMethodInvoker，上面cachedInvoker部分看到的非默认方法的处理方式
@@ -359,7 +363,13 @@ public MethodSignature(Configuration configuration, Class<?> mapperInterface, Me
 }
 ```
 
-​		执行流程图如下：
+假定我们要获取的是自定义的一个对象，那么我们会使用this.paramNameResolver这个方法：
+
+![image-20210816010620258](Mybatis源码/image-20210816010620258.png)	为什么是二维数组，因为我们对传入的参数可以使用@Param传入，而传入的对象前可以有多个注解，所以是二维数组：
+
+![image-20210816010742786](Mybatis源码/image-20210816010742786.png)	
+
+执行流程图如下：
 
 ![image-20210813082848513](Mybatis源码/image-20210813082848513.png)
 
@@ -381,3 +391,10 @@ case INSERT: {
 ```
 
 至此Mybatis框架运行时第二阶段获取MapperMethod对象结束。
+
+### 阶段三、mapperMethod的execute执行流程
+
+先上图，对第三阶段要讲解的过程有个全面认识：
+
+![阶段3：根据SQL指令跳转执行语句](Mybatis源码/阶段3：根据SQL指令跳转执行语句.jpg)
+
