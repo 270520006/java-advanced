@@ -398,3 +398,26 @@ case INSERT: {
 
 ![阶段3：根据SQL指令跳转执行语句](Mybatis源码/阶段3：根据SQL指令跳转执行语句.jpg)
 
+一切从这里开始：
+
+* sqlsession:配置类
+* args：传出参数的类型
+
+
+
+![image-20210816082719536](Mybatis源码/image-20210816082719536.png)
+
+接着进入sqlCommand.getType()判断是什么类型，这里给大家看下这个类型有几种：
+
+```java
+public enum SqlCommandType {
+  UNKNOWN, INSERT, UPDATE, DELETE, SELECT, FLUSH
+}
+```
+
+INSERT, UPDATE, DELETE这三种方法的流程是一样的，因为上一阶段也讲过INSERT了，这里在讲讲UPDATE：
+
+接着，讲一下SELECT方法：这里假设我们要使用的方法是userMapper.getUserById();
+
+
+
