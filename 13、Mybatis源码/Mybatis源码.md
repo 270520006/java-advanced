@@ -419,5 +419,27 @@ INSERT, UPDATE, DELETE这三种方法的流程是一样的，因为上一阶段�
 
 接着，讲一下SELECT方法：这里假设我们要使用的方法是userMapper.getUserById();
 
+```java
+case SELECT:
+  if (method.returnsVoid() && method.hasResultHandler()) { //判断是否ResultHandler或者void类型
+    executeWithResultHandler(sqlSession, args);
+    result = null;
+  } else if (method.returnsMany()) { //判断是否返回为数组或者集合
+    result = executeForMany(sqlSession, args);
+  } else if (method.returnsMap()) { //判断返回是否map类型
+    result = executeForMap(sqlSession, args);
+  } else if (method.returnsCursor()) { //判断返回是否cursor类型
+    result = executeForCursor(sqlSession, args);
+  } else {   //都不是则获得属性名和入参的映射关系
+    Object param = method.convertArgsToSqlCommandParam(args); //都不是则获得属性名和入参的映射关系
+    result = sqlSession.selectOne(command.getName(), param);  //执行sql的查询语句
+    if (method.returnsOptional()
+        && (result == null || !method.getReturnType().equals(result.getClass()))) {
+      result = Optional.ofNullable(result);
+    }
+  }
+  break;
+```
+
 
 
