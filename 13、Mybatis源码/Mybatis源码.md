@@ -460,5 +460,49 @@ case SELECT: //根据command.getType()的类型判断使用什么方法
   break;
 ```
 
+​	这里特别注意下sqlSession.selectOne();这个方法,这是第四阶段要讲的方法，特别注意defaultSqlSession=sqlSession；
 
+总结：第三阶段主要通过SqlCommand，确定sqlsession的调用方法。
+
+### 阶段四、selectOne的执行过程
+
+​	第四阶段的重点，围绕SELECT的selectOne来描述：
+
+```java
+result = sqlSession.selectOne(command.getName(), param);
+```
+
+![阶段4：查询前的缓存处理](Mybatis源码/阶段4：查询前的缓存处理.jpg)
+
+所以我们selectOne的执行顺序如下：
+
+  MapperMethod -->DefaultSqlSession -->Confguration -->CachingExecutor -->MappedStatement
+
+-->RawSqlSource -->StaticSqlSource-- >BaseExecutor
+
+按照上表顺序，我们滑轮点击selectOne进入查看：
+
+* 进入后发现是一个接口，我们选择defaultSqlSession这个实现类进行查看：
+
+![image-20210819012237319](Mybatis源码/image-20210819012237319.png)
+
+这里selectOne方法调用了selectList方法，查看前，我们先看下该方法：
+
+* list.size() == 1：判断list的长度是否为1，是的话返回单个
+* list.size() > 1：如果大于1，则抛出异常，并且返回列表长度
+
+```java
+@Override
+public <T> T selectOne(String statement, Object parameter) {
+  // Popular vote was to return null on 0 results and throw exception on too many.
+  List<T> list = this.selectList(statement, parameter);
+  if (list.size() == 1) {  //判断list的长度是否为1，是的话返回单个
+    return list.get(0);
+  } else if (list.size() > 1) {
+    throw new TooManyResultsException("Expected one result (or null) to be returned by selectOne(), but found: " + list.size());
+  } else {
+    return null;
+  }
+}
+```
 
