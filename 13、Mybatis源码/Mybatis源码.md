@@ -5,6 +5,10 @@
 * 进入方法：鼠标滑轮点击方法，或者ctrl+鼠标左键
 * 返回上一层方法：ctrl+alt+小键盘的←，回到下层ctrl+alt+小键盘的←
 
+总流程：这里先跳过配置类，优先介绍sqlsessionFactory后的
+
+![image-20210818083315848](Mybatis源码/image-20210818083315848.png)
+
 ### 阶段一、获得Mapper的动态代理阶段
 
 先上整个流程：
@@ -384,7 +388,7 @@ public MethodSignature(Configuration configuration, Class<?> mapperInterface, Me
 case INSERT: {
   //使用MethodSignature的方法将args数组转换成我们需要获取的数据类型。
   Object param = method.convertArgsToSqlCommandParam(args);
-  //传入方法名和需要返回的对应元素类型。
+//使用MethodSignature的方法将args数组转换成我们需要获取的数据类型。
   result = rowCountResult(sqlSession.insert(command.getName(), param));
   break;
 }
@@ -409,6 +413,11 @@ case INSERT: {
 
 接着进入sqlCommand.getType()判断是什么类型，这里给大家看下这个类型有几种：
 
+* INSERT, UPDATE, DELETE, SELECT：增删改查会用对应的方法。
+* FLUSH：刷新，使用刷新的方法
+* UNKNOWN：不在以上范围的都是UNKNOWN
+  * 抛出异常：BindingException("Unknown execution method for: " + command.getName());
+
 ```java
 public enum SqlCommandType {
   UNKNOWN, INSERT, UPDATE, DELETE, SELECT, FLUSH
@@ -417,10 +426,20 @@ public enum SqlCommandType {
 
 INSERT, UPDATE, DELETE这三种方法的流程是一样的，因为上一阶段也讲过INSERT了，这里在讲讲UPDATE：
 
+```java
+case UPDATE: {//根据command.getType()的类型判断使用什么方法
+  Object param = method.convertArgsToSqlCommandParam(args);
+    //使用MethodSignature的方法将args数组转换成我们需要获取的数据类型。
+  result = rowCountResult(sqlSession.update(command.getName(), param));
+    //使用MethodSignature的方法将args数组转换成我们需要获取的数据类型。得到对应映射关系和查询结果
+  break;
+}
+```
+
 接着，讲一下SELECT方法：这里假设我们要使用的方法是userMapper.getUserById();
 
 ```java
-case SELECT:
+case SELECT: //根据command.getType()的类型判断使用什么方法
   if (method.returnsVoid() && method.hasResultHandler()) { //判断是否ResultHandler或者void类型
     executeWithResultHandler(sqlSession, args);
     result = null;
