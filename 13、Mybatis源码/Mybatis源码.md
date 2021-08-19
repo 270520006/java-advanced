@@ -476,9 +476,9 @@ result = sqlSession.selectOne(command.getName(), param);
 
 所以我们selectOne的执行顺序如下：
 
-  MapperMethod -->DefaultSqlSession -->Confguration -->CachingExecutor -->MappedStatement
+  MapperMethod -->DefaultSqlSession -->Confguration -->CachingExecutor -->
 
--->RawSqlSource -->StaticSqlSource-- >BaseExecutor
+  MappedStatement-->RawSqlSource -->StaticSqlSource-- >BaseExecutor
 
 按照上表顺序，我们滑轮点击selectOne进入查看：
 
@@ -502,6 +502,31 @@ public <T> T selectOne(String statement, Object parameter) {
     throw new TooManyResultsException("Expected one result (or null) to be returned by selectOne(), but found: " + list.size());
   } else {
     return null;
+  }
+}
+```
+
+从上面可以看到，我们如果需要获取单个对象，走的其实是selectList方法，mybatis并没有为单个对象提供方法，
+
+滑轮点击selectList继续深入查看方法：
+
+* 参数解释：
+  * 
+
+```java
+private <E> List<E> selectList(String statement, Object parameter, RowBounds rowBounds, ResultHandler handler) {
+  try {
+      //eg1:statement="mapper.UserMapper.getUserById"
+    MappedStatement ms = configuration.getMappedStatement(statement);
+    // eg1: executor=CachingExecutor
+	//wrapCollection(parameter)=parameter={"id": 2L，"param1",2L}
+    //rowBounds=RowBounds. DEFAULT=new RowBounds(
+	//Executor.NO__RESULT_HANDLER=null
+    return executor.query(ms, wrapCollection(parameter), rowBounds, handler);
+  } catch (Exception e) {
+    throw ExceptionFactory.wrapException("Error querying database.  Cause: " + e, e);
+  } finally {
+    ErrorContext.instance().reset();
   }
 }
 ```
